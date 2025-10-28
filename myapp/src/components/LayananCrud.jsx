@@ -4,10 +4,16 @@ import "flowbite";
 
 function LayananCrud() {
   const [layanan, setLayanan] = useState([]);
-  const [form, setForm] = useState({ id: null, nama: "", deskripsi: "" });
+  const [form, setForm] = useState({
+    id: null,
+    nama: "",
+    deskripsi: "",
+    gambar: null
+  });
   const [showModal, setShowModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const getLayanan = async () => {
     try {
@@ -26,12 +32,26 @@ function LayananCrud() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (form.id) {
-        await axios.put(`http://127.0.0.1:8000/api/layanan/${form.id}`, form);
-      } else {
-        await axios.post("http://127.0.0.1:8000/api/layanan", form);
+      const formData = new FormData();
+      formData.append("nama", form.nama);
+      formData.append("deskripsi", form.deskripsi);
+      if (form.gambar) {
+        formData.append("gambar", form.gambar);
       }
-      setForm({ id: null, nama: "", deskripsi: "" });
+
+      if (form.id) {
+        await axios.post(
+          `http://127.0.0.1:8000/api/layanan/${form.id}?_method=PUT`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      } else {
+        await axios.post("http://127.0.0.1:8000/api/layanan", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      }
+
+      setForm({ id: null, nama: "", deskripsi: "", gambar: null });
       setShowModal(false);
       getLayanan();
     } catch (err) {
@@ -81,6 +101,9 @@ function LayananCrud() {
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th scope="col" className="px-6 py-3">
+                Gambar
+              </th>
+              <th scope="col" className="px-6 py-3">
                 Nama Layanan
               </th>
               <th scope="col" className="px-6 py-3">
@@ -98,12 +121,28 @@ function LayananCrud() {
                   key={l.id}
                   className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
                 >
+                  <td className="px-6 py-4">
+                    {l.gambar_url ? (
+                      <img
+                        src={l.gambar_url}
+                        alt={l.nama}
+                        onClick={() => setPreviewImage(l.gambar_url)} // 🟢 klik gambar buka modal
+                        className="w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm italic">
+                        Tidak ada gambar
+                      </span>
+                    )}
+                  </td>
+
                   <th
                     scope="row"
                     className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
                   >
                     {l.nama}
                   </th>
+
                   <td className="px-6 py-4">{l.deskripsi}</td>
                   <td className="px-6 py-4 text-center space-x-2">
                     <button
@@ -169,6 +208,20 @@ function LayananCrud() {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                  Gambar
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    setForm({ ...form, gambar: e.target.files[0] })
+                  }
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+
               <div className="flex justify-end gap-3 mt-4">
                 <button
                   type="button"
@@ -215,6 +268,31 @@ function LayananCrud() {
                 Hapus
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PREVIEW GAMBAR */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50"
+          onClick={() => setPreviewImage(null)} // klik luar modal = tutup
+        >
+          <div
+            className="relative bg-white dark:bg-gray-800 rounded-lg p-4 max-w-3xl w-auto flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()} // biar klik dalam modal tidak nutup
+          >
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="rounded-lg max-h-[80vh] object-contain"
+            />
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+            >
+              Tutup
+            </button>
           </div>
         </div>
       )}
