@@ -1,4 +1,5 @@
 import LayananCrud from "./components/LayananCrud";
+import './app.css';
 
 function App() {
   return (
